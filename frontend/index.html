@@ -1,0 +1,140 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>DevDesk — Helpdesk System</title>
+    <style>
+        :root {
+            --bg-color: #0f172a;
+            --surface: #1e293b;
+            --surface-hover: #334155;
+            --border: #334155;
+            --primary: #3b82f6;
+            --primary-hover: #2563eb;
+            --text: #f8fafc;
+            --text-muted: #94a3b8;
+            --danger: #ef4444;
+            --success: #10b981;
+            --warning: #f59e0b;
+        }
+
+        * { box-sizing: border-box; margin: 0; padding: 0; font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif; }
+        body { background-color: var(--bg-color); color: var(--text); padding: 24px; line-height: 1.5; }
+        .container { max-width: 1000px; margin: 0 auto; }
+
+        /* Элементы управления */
+        button, input, select, textarea {
+            background-color: var(--surface); color: var(--text); border: 1px solid var(--border);
+            padding: 10px 14px; border-radius: 6px; font-size: 14px; width: 100%; outline: none;
+        }
+        button { background-color: var(--primary); border: none; cursor: pointer; font-weight: 500; width: auto; }
+        button:hover { background-color: var(--primary-hover); }
+        button.secondary { background-color: var(--surface); border: 1px solid var(--border); }
+        button.secondary:hover { background-color: var(--surface-hover); }
+
+        .hidden { display: none !important; }
+        .badge { display: inline-block; padding: 2px 8px; border-radius: 9999px; font-size: 12px; font-weight: 600; text-transform: uppercase; }
+        .badge-new { background-color: #1e3a8a; color: #93c5fd; }
+        .badge-in_progress { background-color: #78350f; color: #fde68a; }
+        .badge-resolved { background-color: #064e3b; color: #a7f3d0; }
+        .badge-closed { background-color: #374151; color: #9ca3af; }
+
+        /* Layout */
+        header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 24px; padding-bottom: 16px; border-bottom: 1px solid var(--border); }
+        .card { background-color: var(--surface); border: 1px solid var(--border); border-radius: 8px; padding: 20px; margin-bottom: 16px; }
+        
+        /* Сетка тикетов */
+        .ticket-item { display: flex; justify-content: space-between; align-items: center; padding: 14px; border-bottom: 1px solid var(--border); cursor: pointer; }
+        .ticket-item:hover { background-color: var(--surface-hover); }
+        .ticket-item:last-child { border-bottom: none; }
+
+        /* Всплывающее окно (Modal) */
+        .modal-backdrop { position: fixed; inset: 0; background: rgba(0,0,0,0.6); display: flex; align-items: center; justify-content: center; z-index: 50; }
+        .modal { background: var(--surface); border: 1px solid var(--border); border-radius: 8px; width: 100%; max-width: 500px; padding: 24px; }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <!-- Шапка -->
+        <header id="main-header" class="hidden">
+            <div>
+                <h2>DevDesk</h2>
+                <span id="user-info" class="text-muted" style="font-size: 13px;"></span>
+            </div>
+            <div style="display: flex; gap: 8px;">
+                <button id="btn-create-ticket">+ Новый тикет</button>
+                <button id="btn-logout" class="secondary">Выйти</button>
+            </div>
+        </header>
+
+        <!-- 1. Экран Входа -->
+        <div id="view-auth" class="card" style="max-width: 400px; margin: 80px auto;">
+            <h3 style="margin-bottom: 16px;">Вход в систему</h3>
+            <form id="form-login" style="display: flex; flex-direction: column; gap: 14px;">
+                <input type="text" id="login-username" placeholder="Имя пользователя" required>
+                <input type="password" id="login-password" placeholder="Пароль" required>
+                <button type="submit" style="width: 100%;">Войти</button>
+                <p id="auth-error" style="color: var(--danger); font-size: 13px;" class="hidden"></p>
+            </form>
+        </div>
+
+        <!-- 2. Экран Списка Тикетов -->
+        <div id="view-tickets" class="card hidden" style="padding: 0;">
+            <div style="padding: 16px; border-bottom: 1px solid var(--border); display: flex; justify-content: space-between; align-items: center;">
+                <h4>Все обращения</h4>
+                <select id="filter-status" style="width: 180px;">
+                    <option value="">Все статусы</option>
+                    <option value="new">Новые</option>
+                    <option value="in_progress">В работе</option>
+                    <option value="resolved">Решённые</option>
+                    <option value="closed">Закрытые</option>
+                </select>
+            </div>
+            <div id="tickets-list">
+                <!-- Сюда JS рендерит тикеты -->
+            </div>
+        </div>
+
+        <!-- 3. Экран Деталей Тикета -->
+        <div id="view-detail" class="hidden">
+            <button id="btn-back" class="secondary" style="margin-bottom: 16px;">← Назад к списку</button>
+            
+            <div class="card" id="ticket-info">
+                <!-- Сюда вставляются данные тикета -->
+            </div>
+
+            <div class="card">
+                <h4>Комментарии</h4>
+                <div id="comments-list" style="margin: 16px 0; display: flex; flex-direction: column; gap: 12px;"></div>
+                <form id="form-comment" style="display: flex; flex-direction: column; gap: 10px;">
+                    <textarea id="comment-text" rows="3" placeholder="Напишите ответ..." required></textarea>
+                    <button type="submit" style="align-self: flex-end;">Отправить</button>
+                </form>
+            </div>
+        </div>
+    </div>
+
+    <!-- Модальное окно создания тикета -->
+    <div id="modal-create" class="modal-backdrop hidden">
+        <div class="modal">
+            <h3 style="margin-bottom: 16px;">Создать обращение</h3>
+            <form id="form-create-ticket" style="display: flex; flex-direction: column; gap: 14px;">
+                <input type="text" id="ticket-title" placeholder="Краткая тема" required>
+                <select id="ticket-priority">
+                    <option value="low">Низкий приоритет</option>
+                    <option value="medium" selected>Средний приоритет</option>
+                    <option value="high">Высокий приоритет</option>
+                </select>
+                <textarea id="ticket-desc" rows="4" placeholder="Подробное описание проблемы..." required></textarea>
+                <div style="display: flex; justify-content: flex-end; gap: 8px;">
+                    <button type="button" id="btn-cancel-modal" class="secondary">Отмена</button>
+                    <button type="submit">Создать</button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <script src="app.js"></script>
+</body>
+</html>

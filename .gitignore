@@ -1,0 +1,17 @@
+__pycache__/
+*.pyc
+db.sqlite3
+.vscode/
+venv/
+djvenv/
+backend/staticfiles/
+*/staticfiles/
+backend/static/admin/
+*/static/admin/
+backend/media/
+*/media/
+*.log
+backend/logs/
+logs/
+.env
+backend/.dockerignore
