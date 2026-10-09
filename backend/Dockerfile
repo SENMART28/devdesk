@@ -1,5 +1,3 @@
-#В улучшении помогал ИИ!
-
 FROM python:3.12-slim AS builder
 
 ENV PYTHONDONTWRITEBYTECODE=1 \
@@ -7,7 +5,6 @@ ENV PYTHONDONTWRITEBYTECODE=1 \
 
 WORKDIR /app
 
-# Устанавливаем системные пакеты, необходимые ТОЛЬКО для компиляции колес (wheels)
 RUN apt-get update && apt-get install -y --no-install-recommends \
     build-essential \
     libpq-dev \
@@ -28,8 +25,6 @@ ENV PYTHONDONTWRITEBYTECODE=1 \
     PYTHONUNBUFFERED=1 \
     PATH="/opt/venv/bin:$PATH"
 
-# В runtime нужны только разделяемые библиотеки времени выполнения (без gcc и заголовков)
-# libpq5 — динамическая библиотека для работы psycopg2 с PostgreSQL
 RUN apt-get update && apt-get install -y --no-install-recommends \
     libpq5 \
     curl \
